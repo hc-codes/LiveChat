@@ -19,8 +19,13 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '17'
-          distribution: 'temurin'  # Use Temurin distribution (Eclipse JDK)
+          distribution: 'temurin'  # Or 'adoptopenjdk' if preferred
           architecture: 'x64'
+
+      - name: Set JAVA_HOME environment variable
+        run: |
+          echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
+          echo "JAVA_HOME set to $JAVA_HOME"
 
       - name: Check Java version
         run: java -version
