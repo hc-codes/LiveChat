@@ -20,7 +20,7 @@ public class ChatHub : Hub
             return existingList;
         });
 
-        await Clients.All.SendAsync("UserJoined", username);
+        //await Clients.All.SendAsync("UserJoined", username);
         await Clients.All.SendAsync("UpdateActiveUsers", _userConnectionMap.Keys);
     }
 
