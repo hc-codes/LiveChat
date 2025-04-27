@@ -76,11 +76,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Install Node.js and npm
+      run: |
+        curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+
     - name: Deploy to Vercel
       run: |
-        curl -fsSL https://vercel.com/download -o vercel-cli.tar.gz
-        tar -xvzf vercel-cli.tar.gz
-        ./vercel --token ${{ secrets.VERCEL_TOKEN }}
+        vercel login ${{ secrets.VERCEL_TOKEN }}  # If you're not logged in
+        vercel --prod
 
   # Deployment to Production
   deploy_production:
