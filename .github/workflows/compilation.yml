@@ -84,7 +84,7 @@ jobs:
   
       - name: Deploy to Vercel
         run: |
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
 
   # Deployment to Production
   deploy_production:
