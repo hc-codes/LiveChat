@@ -24,10 +24,17 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore  # Restores NuGet dependencies for the project
 
-      - name: Run Static Analysis (Optional, e.g., SonarQube)
+      - name: Install SonarScanner
         run: |
-          curl -sS https://sonarcloud.io/install.sh | bash
-          sonar-scanner # Run SonarQube static analysis if configured
+          curl -o install.sh -sS https://sonarcloud.io/install.sh
+          bash install.sh
+          
+      - name: Run Static Analysis (SonarCloud)
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
+            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
+            -Dsonar.exclusions="**/Client Test/test.html"  # Exclude the test.html file
 
   # Continuous Integration: Build and Unit Tests
   ci:
