@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - maste
+      - master
   pull_request:
     branches:
       - master
@@ -16,21 +16,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js (or your respective language/environment)
-        uses: actions/setup-node@v2
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v2
         with:
-          node-version: '16'  # Use your preferred version
+          dotnet-version: '8.0'
 
-      - name: Install Dependencies
-        run: npm install  # Change this based on your package manager (e.g., yarn, pip)
-
-      - name: Run Linting
-        run: npm run lint  # Ensure you have a linting script in your package.json or config
+      - name: Restore Dependencies
+        run: dotnet restore  # Restores NuGet dependencies for the project
 
       - name: Run Static Analysis (Optional, e.g., SonarQube)
         run: |
           curl -sS https://sonarcloud.io/install.sh | bash
-          sonar-scanner # This runs SonarQube static analysis if configured
+          sonar-scanner # Run SonarQube static analysis if configured
 
   # Continuous Integration: Build and Unit Tests
   ci:
@@ -40,18 +37,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js (or your respective language/environment)
-        uses: actions/setup-node@v2
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v2
         with:
-          node-version: '16'
+          dotnet-version: '8.0'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Restore Dependencies
+        run: dotnet restore  # Restore NuGet packages
+
+      - name: Build the Application
+        run: dotnet build --configuration Release  # Build the project
 
       - name: Run Unit Tests
-        run: npm test  # Ensure your tests are properly configured
+        run: dotnet test  # Run the unit tests
 
-  # Deployment to Staging (or Production)
+  # Deployment to Staging
   deploy_staging:
     runs-on: ubuntu-latest
     needs: ci
@@ -60,15 +60,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up SSH for deployment (if needed)
+      - name: Set up SSH for deployment
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Publish Application
+        run: dotnet publish --configuration Release --output ./publish  # Publish to a folder
+
       - name: Deploy to Staging Server
         run: |
-          scp -r ./dist user@staging-server:/path/to/deploy
-          ssh user@staging-server "docker-compose up -d" # Example for Docker deployment
+          scp -r ./publish/* user@staging-server:/path/to/deploy
+          ssh user@staging-server "sudo systemctl restart your-app-service"  # Restart app (service-based deploy)
 
   # Deployment to Production
   deploy_production:
@@ -80,15 +83,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up SSH for production (if needed)
+      - name: Set up SSH for production deployment
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Publish Application
+        run: dotnet publish --configuration Release --output ./publish  # Publish for production
+
       - name: Deploy to Production Server
         run: |
-          scp -r ./dist user@production-server:/path/to/deploy
-          ssh user@production-server "docker-compose up -d" # Example for Docker deployment
+          scp -r ./publish/* user@production-server:/path/to/deploy
+          ssh user@production-server "sudo systemctl restart your-app-service"  # Restart app (service-based deploy)
 
   # Monitoring after Deployment
   monitoring:
@@ -122,13 +128,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up Node.js (or your respective language/environment)
-        uses: actions/setup-node@v2
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v2
         with:
-          node-version: '16'
+          dotnet-version: '8.0'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Restore Dependencies
+        run: dotnet restore  # Restore NuGet packages
 
       - name: Run Integration Tests
-        run: npm run integration-tests # Ensure this command is defined in your package.json or config
+        run: dotnet test --filter "Category=Integration"  # Run specific tests for integration
