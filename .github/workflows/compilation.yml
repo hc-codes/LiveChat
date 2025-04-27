@@ -36,10 +36,14 @@ jobs:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.15-6/x64
 
       - name: Run SonarCloud Analysis
         run: |
           sonar-scanner -Dsonar.exclusions=**/*.html 
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.15-6/x64
             
   # Continuous Integration: Build and Unit Tests
   ci:
