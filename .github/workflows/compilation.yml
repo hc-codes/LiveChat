@@ -22,11 +22,8 @@ jobs:
           distribution: 'temurin'
           architecture: 'x64'
 
-      - name: Set JAVA_HOME and update PATH
-        run: |
-          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
-          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
-          java -version
+      - name: Check Java version
+        run: java -version
 
       - name: Set up SonarCloud
         uses: SonarSource/sonarcloud-github-action@v1
