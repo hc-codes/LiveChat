@@ -39,7 +39,12 @@ jobs:
 
       - name: Run SonarCloud Analysis
         run: |
-          sonar-scanner -Dsonar.exclusions=**/*.html
+          sonar-scanner \
+            -Dsonar.projectKey=YOUR_PROJECT_KEY \
+            -Dsonar.organization=YOUR_ORGANIZATION \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.exclusions=**/*.html
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
             
