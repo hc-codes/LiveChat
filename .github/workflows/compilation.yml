@@ -15,11 +15,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
         
-      - name: Set up Java 17
+      - name: Set up Java 17 (Temurin)
         uses: actions/setup-java@v2
         with:
           java-version: '17'  # Specify Java 17
-          distribution: 'adoptopenjdk'  # Specify the JDK distribution (you can also use 'zulu', 'temurin', etc.)
+          distribution: 'temurin'  # Use Eclipse Temurin as the distribution
           architecture: 'x64'
 
       - name: Set up SonarCloud
