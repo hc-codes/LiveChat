@@ -9,32 +9,22 @@ on:
       - master
 
 jobs:
-  # Code Quality Check: Linting, Static Analysis
   code_quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: '8.0'
-
-      - name: Restore Dependencies
-        run: dotnet restore  # Restores NuGet dependencies for the project
-
-      - name: Install SonarCloud Scanner
+      - name: Set up SonarCloud
         uses: SonarSource/sonarcloud-github-action@v1
         with:
-          sonar-token: ${{ secrets.SONAR_TOKEN }}  # Make sure you have this token set in GitHub Secrets
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Run Static Analysis (SonarCloud)
+      - name: Run SonarCloud Analysis
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
-            -Dsonar.exclusions="**/*.html"  # Exclude all *.html files
+          sonar-scanner -Dsonar.exclusions=**/*.html 
             
   # Continuous Integration: Build and Unit Tests
   ci:
