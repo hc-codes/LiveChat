@@ -24,6 +24,11 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore  # Restores NuGet dependencies for the project
 
+      - name: Install SonarScanner
+        run: |
+          curl -o install.sh -sS https://sonarcloud.io/install.sh
+          bash install.sh
+          
       - name: Run Static Analysis (SonarCloud)
         run: |
           sonar-scanner \
