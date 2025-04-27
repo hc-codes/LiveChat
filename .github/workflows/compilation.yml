@@ -24,18 +24,18 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore  # Restores NuGet dependencies for the project
 
-      - name: Install SonarScanner
-        run: |
-          curl -o install.sh -sS https://sonarcloud.io/install.sh
-          bash install.sh
-          
+      - name: Install SonarCloud Scanner
+        uses: SonarSource/sonarcloud-github-action@v1
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}  # Make sure you have this token set in GitHub Secrets
+
       - name: Run Static Analysis (SonarCloud)
         run: |
           sonar-scanner \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORG }} \
             -Dsonar.exclusions="**/*.html"  # Exclude all *.html files
-
+            
   # Continuous Integration: Build and Unit Tests
   ci:
     runs-on: ubuntu-latest
