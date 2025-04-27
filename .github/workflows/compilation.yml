@@ -40,8 +40,8 @@ jobs:
       - name: Run SonarCloud Analysis
         run: |
           sonar-scanner \
-            -Dsonar.projectKey=YOUR_PROJECT_KEY \
-            -Dsonar.organization=YOUR_ORGANIZATION \
+            -Dsonar.projectKey=LiveChat \
+            -Dsonar.organization=hc-codes \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.exclusions=**/*.html
