@@ -69,23 +69,22 @@ jobs:
   # Deployment to Staging
   deploy_staging:
     runs-on: ubuntu-latest
+    needs: tests
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install Node.js and npm
-      run: |
-        curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-
-    - name: Install Vercel CLI
-      run: npm install -g vercel
-
-    - name: Deploy to Vercel (Staging)
-      run: |
-        echo "Deploying to Staging..."
-        vercel login ${{ secrets.VERCEL_TOKEN }}  # Log in to Vercel (you can remove this if already authenticated)
-        vercel --prod --token ${{ secrets.VERCEL_TOKEN }}  # Deploy to Vercel production environment
+      - name: Checkout code
+        uses: actions/checkout@v2
+  
+      - name: Install Node.js and npm
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+  
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+  
+      - name: Deploy to Vercel
+        run: |
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod
 
   # Deployment to Production
   deploy_production:
