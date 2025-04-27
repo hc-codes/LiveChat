@@ -88,7 +88,7 @@ jobs:
 
       - name: Deploy to Staging Server
         run: |
-          scp -r ./publish/* user@staging-server:/path/to/deploy
+          scp -r ./publish/* inl371@192.168.1.10:/path/to/deploy
           ssh user@staging-server "sudo systemctl restart your-app-service"  # Restart app (service-based deploy)
 
   # Deployment to Production
