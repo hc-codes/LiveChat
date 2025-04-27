@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>LAN Chat Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <div style="float: right">
+        <h3>Active Users</h3>
+        <ul id="activeUsers"></ul>
+    </div>
+</head>
+
+<br>
+    <h1>LAN Chat Test</h1>
+
+    <input type="text" id="userInput" placeholder="Your name" disabled />
+    <P id="isTyping"></P>
+    <br>
+    <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="OnTyping()" onblur="OnBlur()"/>
+    <select id="userList">
+        <option value>Everyone</option>
+        <!-- dynamically add users here -->
+    </select>
+
+    <button onclick="sendMessage()">Send</button>
+
+    <ul id="messagesList"></ul>
+
+    <script>
+        const username = prompt("Enter your username:");
+        while (!username || !username.trim()) {
+            username = prompt("Please enter a valid username (can't be empty or just whitespace):");
+        }
+        document.getElementById("userInput").value = username;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://192.168.1.10:7048/chat?username=" + username)
+            .build();
+
+        // No need to manually add yourself here!
+
+        connection.on("ReceiveMessage", (user, message) => {
+            const li = document.createElement("li");
+            const displayUser = user === username ? "You" : user; // If the message is from the current user, show "You"
+            li.textContent = `${displayUser}: ${message}`;
+            document.getElementById("messagesList").appendChild(li);
+        });
+
+        connection.on("ReceiveSystemMessage", (message) => {
+            const li = document.createElement("li");
+            li.textContent = `🔔 ${message}`;
+            li.style.fontStyle = "italic";
+            li.style.color = "gray";
+            document.getElementById("messagesList").appendChild(li);
+        });
+
+        connection.on("ShowUserTyping", (fromUser, toUser, show) => {
+            if (!show || fromUser === username){
+                const istyping = document.getElementById("isTyping");
+                istyping.innerHTML = "";
+                return;
+            }
+            
+            const istyping = document.getElementById("isTyping");
+            istyping.innerHTML = `${fromUser} is typing...`;
+        });
+
+        const activeUsersList = document.getElementById("activeUsers");
+        const userListDropdown = document.getElementById("userList");
+
+        // Handle active users list update
+        connection.on("UpdateActiveUsers", function (users) {
+            // Clear both active users display and dropdown
+            activeUsersList.innerHTML = "";
+            userListDropdown.innerHTML = "";
+
+            // Always keep "Everyone" at top
+            const everyoneOption = document.createElement("option");
+            everyoneOption.value = "";
+            everyoneOption.text = "Everyone";
+            userListDropdown.appendChild(everyoneOption);
+
+            users.forEach((user) => {
+                // Skip the iteration if the user matches the username
+                if (user === username) {
+                    return;  // This is the correct way to "skip" in forEach
+                }
+            
+                const li = document.createElement("li");
+                li.textContent = user;
+                activeUsersList.appendChild(li);
+                
+                const option = document.createElement("option");
+                option.value = user;
+                option.text = user;
+                userListDropdown.appendChild(option);
+            });
+        });
+
+        // Handle user leaving
+        connection.on("UserLeft", function (username) {
+            // Remove from active users list
+            const userItems = activeUsersList.getElementsByTagName("li");
+            for (let i = 0; i < userItems.length; i++) {
+                if (userItems[i].textContent === username) {
+                    activeUsersList.removeChild(userItems[i]);
+                    break;
+                }
+            }
+
+            // Remove from userList dropdown
+            const options = userListDropdown.options;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === username) {
+                    userListDropdown.remove(i);
+                    break;
+                }
+            }
+        });
+
+        function debounce(func, timeout = 300) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+        
+        async function onkeypress(){
+            const toUser = userListDropdown.value;
+            connection.invoke("ShowUserTyping", username, toUser, true);
+        }
+
+        const OnTyping = debounce(onkeypress);
+
+        function OnBlur(){
+            const istyping = document.getElementById("isTyping");
+            istyping.innerHTML = "";
+            const toUser = userListDropdown.value;
+            connection.invoke("ShowUserTyping", username, toUser, false);
+        }
+
+        async function start() {
+            try {
+                await connection.start();
+                console.log("Connected to chat hub!");
+        
+                // 🔥 Important! Tell server your username
+                await connection.invoke("Join", username);
+        
+            } catch (err) {
+                console.error(err);
+                setTimeout(start, 5000);
+            }
+        }
+
+        function sendMessage() {
+            const message = document.getElementById("messageInput").value;
+            const toUser = document.getElementById("userList").value;
+            const fromUser = username;
+
+            connection.invoke("SendMessage", fromUser, toUser, message);
+            document.getElementById("messageInput").value = "";
+        }
+
+        start();
+    </script>
+</body>
+</html>

@@ -1,45 +1,106 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Collections.Concurrent;
+using Microsoft.AspNetCore.SignalR;
 
 namespace LiveChat.Hubs;
 
 public class ChatHub : Hub
 {
-    // Dictionary to store connected users
-    private static List<string> _activeUsers = new List<string>();
+    private static readonly ConcurrentDictionary<string, HashSet<string>> _userConnectionMap = new();
 
-    // When a user connects, add them to the active users list
+    public async Task Join(string username)
+    {
+        var connectionId = Context.ConnectionId;
+        _userConnectionMap.TryGetValue(username, out var list);
+        _userConnectionMap.AddOrUpdate(
+        username,
+        new HashSet<string> { connectionId },
+        (key, existingList) =>
+        {
+            existingList.Add(connectionId);
+            return existingList;
+        });
+
+        await Clients.All.SendAsync("UserJoined", username);
+        await Clients.All.SendAsync("UpdateActiveUsers", _userConnectionMap.Keys);
+    }
+
     public override async Task OnConnectedAsync()
     {
-        var username = Context.GetHttpContext().Request.Query["username"].ToString();
-        if (!string.IsNullOrEmpty(username) && !_activeUsers.Contains(username))
-        {
-            _activeUsers.Add(username);
-        }
-
-        // Notify all clients about the updated user list
-        await Clients.All.SendAsync("UpdateActiveUsers", _activeUsers);
-
         await base.OnConnectedAsync();
     }
 
-    // When a user disconnects, remove them from the active users list
     public override async Task OnDisconnectedAsync(Exception exception)
     {
-        var username = Context.GetHttpContext().Request.Query["username"].ToString();
-        if (!string.IsNullOrEmpty(username) && _activeUsers.Contains(username))
-        {
-            _activeUsers.Remove(username);
-        }
+        var username = _userConnectionMap
+            .FirstOrDefault(x => x.Value.Contains(Context.ConnectionId)).Key;
 
-        // Notify all clients about the updated user list
-        await Clients.All.SendAsync("UpdateActiveUsers", _activeUsers);
+        if (!string.IsNullOrEmpty(username))
+        {
+            var values = _userConnectionMap[username];
+            values.Remove(Context.ConnectionId);
+            if (values.Count > 0)
+            {
+                _userConnectionMap[username] = values;
+            }
+            else
+            {
+                _userConnectionMap.TryRemove(username, out values);
+                
+                // Notify everyone that user left
+                await Clients.All.SendAsync("UserLeft", username);
+            }
+
+        }
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    // Send a message to a specific user
-    public async Task SendMessage(string user, string message)
+    public async Task SendMessage(string fromUser, string toUser, string message)
     {
-        await Clients.User(user).SendAsync("ReceiveMessage", message);
+        if (string.IsNullOrWhiteSpace(toUser))
+        {
+            // Send to everyone
+            await Clients.All.SendAsync("ReceiveMessage", fromUser, message);
+        }
+        else
+        {
+            if (_userConnectionMap.TryGetValue(toUser, out var receiverConnectionIds) && _userConnectionMap.TryGetValue(fromUser, out HashSet<string> senderIds))
+            {
+                // Combine senderIds and receiverConnectionIds into one list
+                var allConnectionIds = new HashSet<string>();
+                allConnectionIds.UnionWith(senderIds);
+                allConnectionIds.UnionWith(receiverConnectionIds);
+
+                // Send to both sender and receiver
+                await Clients.Clients(allConnectionIds)
+                    .SendAsync("ReceiveMessage", fromUser, message);
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("ReceiveSystemMessage", $"{toUser} is no longer online.");
+            }
+        }
+    }
+
+    public async Task ShowUserTyping(string fromUser, string toUser, bool show)
+    {
+        if (string.IsNullOrWhiteSpace(toUser))
+        {
+            // Send to everyone
+            await Clients.Others.SendAsync("ShowUserTyping", fromUser, toUser, show);
+            return;
+        }
+
+        if (_userConnectionMap.TryGetValue(toUser, out var receiverConnectionId) &&
+            _userConnectionMap.TryGetValue(fromUser, out var senderConnectionId))
+        {
+            // Send to both sender and receiver
+            await Clients.Clients(receiverConnectionId)
+                .SendAsync("ShowUserTyping", fromUser, toUser, show);
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("ReceiveSystemMessage", $"{toUser} is no longer online.");
+        }
     }
 }
