@@ -35,7 +35,7 @@
         document.getElementById("userInput").value = username;
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://live-chat-six-lemon.vercel.app/chat?username=" + username)
+            .withUrl("https://livechat-production-611f.up.railway.app/chat?username=" + username)
             .build();
 
         // No need to manually add yourself here!
