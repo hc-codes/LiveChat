@@ -6,7 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSignalR(); // Add SignalR service
+builder.Services.AddSignalR(hubOptions =>
+{
+    hubOptions.MaximumReceiveMessageSize = 64 * 1024; // 64KB default
+}); // Add SignalR service
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
