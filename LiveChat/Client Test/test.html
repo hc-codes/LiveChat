@@ -35,8 +35,13 @@
         document.getElementById("userInput").value = username;
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://livechat-production-611f.up.railway.app/chat?username=" + username)
-            .build();
+        .withUrl("https://livechat-production-611f.up.railway.app/chat", {
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSocket | signalR.HttpTransportType.ServerSentEvents,
+        withCredentials: true
+        })
+        .withAutomaticReconnect()
+        .build();
 
         // No need to manually add yourself here!
 
