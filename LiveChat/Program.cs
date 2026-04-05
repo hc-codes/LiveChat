@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         policy
-            .WithOrigins("http://127.0.0.1:5501", "http://192.168.1.10:5501") // your frontend address (important!!)
+            .WithOrigins("https://live-chat-six-lemon.vercel.app", "http://127.0.0.1:5501", "http://192.168.1.10:5501") // your frontend address (important!!)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials(); // <- important
